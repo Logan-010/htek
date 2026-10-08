@@ -21,9 +21,11 @@ executable htek
     import:           warnings
     main-is:          Main.hs
     other-modules:    Cli
-                      Crypto
+                      Cipher
     -- other-extensions:
     build-depends:    base ^>=4.20.2.0,
-                      crypton ==2.1.8
+                      crypton ==2.1.8,
+                      bytestring ==0.12.2.0,
+                      text ==2.1.4
     hs-source-dirs:   app
     default-language: Haskell2010

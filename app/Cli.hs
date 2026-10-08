@@ -1,12 +1,12 @@
-module Cli (Cli (..), parse, app_version, cli_help) where
+module Cli (Cli (..), parse, appVersion, cliHelp) where
 
-app_version :: String
-app_version = "htek 0.1.0.0"
+appVersion :: String
+appVersion = "htek 0.1.0.0"
 
-cli_help :: String
-cli_help =
+cliHelp :: String
+cliHelp =
   unlines
-    [ app_version,
+    [ appVersion,
       "Secure XChaCha20Poly1305 encryption using Argon2id for key derivation.",
       "",
       "Usage: htek [OPTIONS]",
