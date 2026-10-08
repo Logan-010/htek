@@ -22,9 +22,25 @@
         system:
         let
           pkgs = import nixpkgs { inherit system; };
+
+          hs = pkgs.haskellPackages.override {
+            overrides = hself: hsuper: {
+              crypton = hself.callHackageDirect {
+                pkg = "crypton";
+                ver = "2.1.8";
+                sha256 = "sha256-AXgeI/nVn7mZDgL3Vag3ifIt3NGIHo4XKC4Dj919Oow=";
+              } { };
+              text = hself.callHackage "text" "2.1.4" { };
+              ram = hself.callHackageDirect {
+                pkg = "ram";
+                ver = "0.22.1";
+                sha256 = "sha256-viwoo1u5jRGO2pTzQLlJ/PgkLmxeafTg8DDGTylpcPo=";
+              } { };
+            };
+          };
         in
         {
-          default = pkgs.haskellPackages.callCabal2nix "project" ./. { };
+          default = hs.callCabal2nix "htek" ./. { };
         }
       );
 

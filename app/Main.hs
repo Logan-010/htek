@@ -8,7 +8,7 @@ import Crypto.Random (getRandomBytes)
 import qualified Data.ByteString as BS
 import System.Environment (getArgs)
 import System.Exit (exitFailure)
-import System.IO (IOMode (ReadMode, WriteMode), hClose, hFlush, hPutStrLn, hSetBinaryMode, openBinaryFile, stderr, stdin, stdout)
+import System.IO (IOMode (ReadMode, WriteMode), hClose, hFlush, hPutStrLn, openBinaryFile, stderr, stdin, stdout)
 import System.IO.Error (catchIOError, ioeGetErrorString, isDoesNotExistError)
 
 main :: IO ()
