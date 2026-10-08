@@ -26,6 +26,7 @@ executable htek
     build-depends:    base ^>=4.20.2.0,
                       crypton ==2.1.8,
                       bytestring ==0.12.2.0,
-                      text ==2.1.4
+                      text ==2.1.4,
+                      ram ==0.22.1
     hs-source-dirs:   app
     default-language: Haskell2010

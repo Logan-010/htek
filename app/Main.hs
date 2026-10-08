@@ -2,64 +2,97 @@ module Main (main) where
 
 import qualified Cipher
 import qualified Cli
+import Control.Exception (bracket)
+import Control.Monad (unless, when)
 import Crypto.Random (getRandomBytes)
-import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
 import System.Environment (getArgs)
-import System.IO (IOMode (ReadMode, WriteMode), hClose, openBinaryFile, stdin, stdout)
-import System.IO.Error (catchIOError, isDoesNotExistError)
+import System.Exit (exitFailure)
+import System.IO (IOMode (ReadMode, WriteMode), hClose, hFlush, hPutStrLn, hSetBinaryMode, openBinaryFile, stderr, stdin, stdout)
+import System.IO.Error (catchIOError, ioeGetErrorString, isDoesNotExistError)
 
 main :: IO ()
 main =
-  getArgs >>= \a -> case Cli.parse a of
-    Left err -> putStrLn $ "Parse error: " ++ err
-    Right cli ->
+  catchIOError
+    (do
+      args <- getArgs
+      cli <- either (ioError . userError . ("Parse error: " ++)) pure (Cli.parse args)
       if Cli.help cli
         then putStrLn Cli.cliHelp
-        else
-          if Cli.version cli
-            then
-              putStrLn Cli.appVersion
-            else
-              case Cli.input cli of
-                Just f -> openBinaryFile f ReadMode
-                Nothing -> pure stdin
-                >>= \input ->
-                  case Cli.output cli of
-                    Just f ->
-                      if Cli.force cli
-                        then openBinaryFile f WriteMode
-                        else
-                          catchIOError
-                            ( openBinaryFile f ReadMode >>= \h ->
-                                hClose h
-                                  >> ioError (userError "Output file already exists (use --force)")
-                            )
-                            ( \e ->
-                                if isDoesNotExistError e
-                                  then openBinaryFile f WriteMode
-                                  else ioError e
-                            )
+        else if Cli.version cli
+          then putStrLn Cli.appVersion
+          else
+            bracket
+              (case Cli.input cli of
+                Just path -> openBinaryFile path ReadMode
+                Nothing -> pure stdin)
+              (\input -> case Cli.input cli of
+                Just _ -> hClose input
+                Nothing -> pure ())
+              (\input -> do
+                password <- case (Cli.password cli, Cli.key_file cli) of
+                  (Just pw, _) -> pure pw
+                  (Nothing, Just path) -> readFile path
+                  (Nothing, Nothing) -> Cipher.password (Cli.encrypt cli)
+                bracket
+                  (case Cli.output cli of
                     Nothing -> pure stdout
-                    >>= \output ->
-                      case (Cli.password cli, Cli.key_file cli) of
-                        (Nothing, Nothing) -> Cipher.password $ Cli.encrypt cli
-                        (Just pw, _) -> pure pw
-                        (Nothing, Just kf) -> readFile kf
-                        >>= \password ->
-                          ( if Cli.encrypt cli
-                              then
-                                (getRandomBytes Cipher.saltLength :: IO ByteString) >>= \rb -> BS.hPut output rb >> pure rb
-                              else BS.hGet input Cipher.saltLength
-                          )
-                            >>= \salt ->
-                              ( if Cli.encrypt cli
-                                  then
-                                    (getRandomBytes Cipher.nonceLength :: IO ByteString) >>= \rb -> BS.hPut output rb >> pure rb
-                                  else
-                                    BS.hGet input Cipher.nonceLength
-                              )
-                                >>= \nonceBase ->
-                                  Cipher.hashPassword password salt
-                                    >>= \key ->
-                                      hClose input >> hClose output
+                    Just path ->
+                      if Cli.force cli
+                        then openBinaryFile path WriteMode
+                        else catchIOError
+                          (do
+                            handle <- openBinaryFile path ReadMode
+                            hClose handle
+                            ioError (userError "Output file already exists (use --force)"))
+                          (\err -> if isDoesNotExistError err
+                            then openBinaryFile path WriteMode
+                            else ioError err))
+                  (\output -> case Cli.output cli of
+                    Just _ -> hClose output
+                    Nothing -> hFlush output)
+                  (\output -> do
+                    salt <- if Cli.encrypt cli
+                      then do
+                        bytes <- getRandomBytes Cipher.saltLength
+                        BS.hPut output bytes
+                        pure bytes
+                      else BS.hGet input Cipher.saltLength
+                    unless (BS.length salt == Cipher.saltLength) $
+                      ioError (userError "Truncated salt")
+                    nonceBase <- if Cli.encrypt cli
+                      then do
+                        bytes <- getRandomBytes Cipher.nonceLength
+                        BS.hPut output bytes
+                        pure bytes
+                      else BS.hGet input Cipher.nonceLength
+                    unless (BS.length nonceBase == Cipher.nonceLength) $
+                      ioError (userError "Truncated nonce")
+                    key <- Cipher.hashPassword password salt
+                    let encrypt n = do
+                          plaintext <- BS.hGet input Cipher.bufferLength
+                          let isLast = BS.length plaintext < Cipher.bufferLength
+                          nonce <- either (ioError . userError) pure (Cipher.makeNonce nonceBase n isLast)
+                          (ciphertext, tag) <- either (ioError . userError) pure (Cipher.encrypt plaintext key nonce)
+                          BS.hPut output ciphertext
+                          BS.hPut output tag
+                          unless isLast (encrypt (n + 1))
+                        decrypt n = do
+                          chunk <- BS.hGet input (Cipher.bufferLength + Cipher.tagLength)
+                          when (BS.length chunk < Cipher.tagLength) $
+                            ioError (userError "Truncated encrypted stream (missing final chunk or authentication tag)")
+                          let ciphertextLength = BS.length chunk - Cipher.tagLength
+                              (ciphertext, tag) = BS.splitAt ciphertextLength chunk
+                              isLast = ciphertextLength < Cipher.bufferLength
+                          nonce <- either (ioError . userError) pure (Cipher.makeNonce nonceBase n isLast)
+                          plaintext <- either (ioError . userError) pure (Cipher.decrypt ciphertext key nonce tag)
+                          when isLast $ do
+                            trailing <- BS.hGet input 1
+                            unless (BS.null trailing) $
+                              ioError (userError "Unexpected data after final chunk")
+                          BS.hPut output plaintext
+                          unless isLast (decrypt (n + 1))
+                    if Cli.encrypt cli then encrypt 0 else decrypt 0)))
+    (\err -> do
+      hPutStrLn stderr ("htek: " ++ ioeGetErrorString err)
+      exitFailure)

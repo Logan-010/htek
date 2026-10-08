@@ -73,30 +73,19 @@ parse' args pending cli = case pending of
       | h `elem` ["--decrypt", "-d"] -> parse' t Nothing $ cli {decrypt = True}
       | h `elem` ["--version", "-v"] -> parse' t Nothing $ cli {version = True}
       | h `elem` ["--help", "-h"] -> parse' t Nothing $ cli {help = True}
-      | otherwise -> Left $ "unknown arg/flag " ++ h
-
-expandFlags :: [String] -> [String]
-expandFlags [] = []
-expandFlags (('-' : '-' : flag) : rest) =
-  ("--" ++ flag) : expandFlags rest
-expandFlags (('-' : flags) : rest) =
-  map (\c -> ['-', c]) flags ++ expandFlags rest
-expandFlags (arg : rest) =
-  arg : expandFlags rest
+      | otherwise -> case h of
+          '-' : first : second : rest
+            | first /= '-' ->
+                parse' (map (\c -> ['-', c]) (first : second : rest) ++ t) Nothing cli
+          _ -> Left $ "unknown arg/flag " ++ h
 
 parse :: [String] -> Either String Cli
-parse args = case parse' (expandFlags args) Nothing $ Cli Nothing Nothing False Nothing Nothing False False False False of
+parse args = case parse' args Nothing $ Cli Nothing Nothing False Nothing Nothing False False False False of
   Left err -> Left err
-  Right cli ->
-    if help cli
-      then Right cli
-      else
-        if (not $ encrypt cli) && (not $ decrypt cli)
-          then
-            Left "neither encrypt or decrypt set. See --help for details."
-          else
-            if encrypt cli && decrypt cli
-              then
-                Left "both encrypt and decrypt set. See --help for details."
-              else
-                Right cli
+  Right cli
+    | help cli || version cli -> Right cli
+    | not (encrypt cli || decrypt cli) ->
+        Left "neither encrypt nor decrypt set. See --help for details."
+    | encrypt cli && decrypt cli ->
+        Left "both encrypt and decrypt set. See --help for details."
+    | otherwise -> Right cli
