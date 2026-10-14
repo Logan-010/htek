@@ -25,6 +25,8 @@
 
           hs = pkgs.haskellPackages.override {
             overrides = hself: hsuper: {
+              # Skip library test suites and their test-only dependencies.
+              mkDerivation = args: hsuper.mkDerivation (args // { doCheck = false; });
               crypton = hself.callHackageDirect {
                 pkg = "crypton";
                 ver = "2.1.8";
@@ -35,6 +37,11 @@
                 pkg = "ram";
                 ver = "0.22.1";
                 sha256 = "sha256-viwoo1u5jRGO2pTzQLlJ/PgkLmxeafTg8DDGTylpcPo=";
+              } { };
+              time = hself.callHackageDirect {
+                pkg = "time";
+                ver = "1.16.0.1";
+                sha256 = "sha256-AEo/DrQAQr+QfWqHMVTh31jCj/crAWFHaNO5j65YJJM=";
               } { };
             };
           };

@@ -11,10 +11,9 @@ import qualified Data.ByteString as BS
 import Data.Foldable (traverse_)
 import qualified Data.Text.Lazy as T
 import Data.Time.Clock (diffUTCTime)
-import System.Directory (getFileSize)
 import System.Environment (getArgs)
 import System.Exit (exitFailure)
-import System.IO (IOMode (ReadMode, WriteMode), hClose, hFlush, hPutStrLn, openBinaryFile, stderr, stdin, stdout)
+import System.IO (IOMode (ReadMode, WriteMode), hClose, hFileSize, hFlush, hPutStrLn, openBinaryFile, stderr, stdin, stdout)
 import System.IO.Error (catchIOError, ioeGetErrorString, isDoesNotExistError)
 import System.ProgressBar
 import Text.Printf (printf)
@@ -97,7 +96,7 @@ main =
                               (Just pw, _) -> pure pw
                               (Nothing, Just path) -> readFile path
                               (Nothing, Nothing) -> Cipher.password (Cli.encrypt cli)
-                            len <- if Cli.quiet cli then pure Nothing else traverse getFileSize $ Cli.input cli
+                            len <- if Cli.quiet cli then pure Nothing else traverse (const $ hFileSize input) $ Cli.input cli
                             pb <- traverse ((\total -> newProgressBar style 10 $ Progress 0 total ()) . fromIntegral) len
                             salt <-
                               if Cli.encrypt cli
