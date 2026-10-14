@@ -8,9 +8,10 @@ import Control.Exception (bracket)
 import Control.Monad (unless, when)
 import Crypto.Random (getRandomBytes)
 import qualified Data.ByteString as BS
-import qualified Data.ByteString.Char8 as BSC
 import Data.Foldable (traverse_)
-import qualified Data.Text.Lazy as T
+import qualified Data.Text as T
+import qualified Data.Text.Encoding as TE
+import qualified Data.Text.Lazy as TL
 import Data.Time.Clock (diffUTCTime)
 import System.Environment (getArgs)
 import System.Exit (exitFailure)
@@ -29,7 +30,7 @@ speed = Label $ \p t ->
         if elapsed > 0
           then fromIntegral (progressDone p) / elapsed
           else 0
-   in T.pack (printf "%.1f items/s" rate)
+   in TL.pack (printf "%.1f items/s" rate)
 
 style :: Style ()
 style =
@@ -94,9 +95,9 @@ main =
                         )
                         ( \output -> do
                             password <- case (Cli.password cli, Cli.key_file cli) of
-                              (Just pw, _) -> pure $ BSC.pack pw
+                              (Just pw, _) -> pure $ TE.encodeUtf8 $ T.pack pw
                               (Nothing, Just path) -> BS.readFile path
-                              (Nothing, Nothing) -> BSC.pack <$> Cipher.password (Cli.encrypt cli)
+                              (Nothing, Nothing) -> TE.encodeUtf8 . T.pack <$> Cipher.password (Cli.encrypt cli)
                             len <- if Cli.quiet cli then pure Nothing else traverse (const $ hFileSize input) $ Cli.input cli
                             pb <- traverse ((\total -> newProgressBar style 10 $ Progress 0 total ()) . fromIntegral) len
                             salt <-
