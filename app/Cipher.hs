@@ -1,7 +1,7 @@
 module Cipher (password, nonceLength, saltLength, tagLength, bufferLength, hashPassword, makeNonce, encrypt, decrypt) where
 
-import qualified Crypto.Cipher.ChaChaPoly1305 as C
 import Control.Exception (bracket)
+import qualified Crypto.Cipher.ChaChaPoly1305 as C
 import Crypto.Error (CryptoFailable (CryptoFailed, CryptoPassed))
 import qualified Crypto.KDF.Argon2 as Argon2
 import Data.Bits (shiftR, (.&.), (.|.))

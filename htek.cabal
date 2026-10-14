@@ -1,35 +1,34 @@
-cabal-version:      3.0
-name:               htek
-version:            0.1.0.0
-synopsis:           A speedy & purely functional file encryption program.
--- description:
-homepage:           https://github.com/Logan-010/htek
-license:            MIT
-license-file:       LICENSE
-author:             Logan-010
-maintainer:         Logan-010
--- copyright:
-category:           System
-build-type:         Simple
-extra-doc-files:    CHANGELOG.md
--- extra-source-files:
+cabal-version: 3.0
+name:          htek
+version:       0.1.0.0
+synopsis:      "A speedy & purely functional file encryption program."
+homepage:      https://github.com/Logan-010/htek
+license:       MIT
+license-file:  LICENSE
+author:        Logan-010
+maintainer:    Logan-010
+category:      System
+build-type:    Simple
 
 common warnings
-    ghc-options: -Wall
+  ghc-options: -Wall
 
 executable htek
-    import:           warnings
-    main-is:          Main.hs
-    other-modules:    Cli
-                      Cipher
-    -- other-extensions:
-    build-depends:    base ^>=4.20.2.0,
-                      crypton ==2.1.8,
-                      bytestring ==0.12.2.0,
-                      text ==2.1.4,
-                      ram ==0.22.1,
-                      terminal-progress-bar ==0.4.2,
-                      time ==1.16.0.1,
-                      directory ==1.3.11.0
-    hs-source-dirs:   app
-    default-language: Haskell2010
+  import:           warnings
+  main-is:          Main.hs
+  other-modules:
+    Cipher
+    Cli
+
+  build-depends:
+    , base                   ^>=4.20.2.0
+    , bytestring             ==0.12.2.0
+    , crypton                ==2.1.8
+    , directory              ==1.3.11.0
+    , ram                    ==0.22.1
+    , terminal-progress-bar  ==0.4.2
+    , text                   ==2.1.4
+    , time                   ==1.16.0.1
+
+  hs-source-dirs:   app
+  default-language: Haskell2010
