@@ -8,8 +8,6 @@ import Data.Bits (shiftR, (.&.), (.|.))
 import qualified Data.ByteArray as BA
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
-import qualified Data.Text as T
-import qualified Data.Text.Encoding as TE
 import Data.Word (Word32, Word8)
 import System.IO (hFlush, hGetEcho, hPutStr, hPutStrLn, hSetEcho, stderr, stdin)
 
@@ -59,8 +57,8 @@ argon2Options =
       Argon2.version = Argon2.Version13
     }
 
-hashPassword :: String -> ByteString -> IO ByteString
-hashPassword pw salt = case Argon2.hash argon2Options (TE.encodeUtf8 (T.pack pw)) salt keyLength of
+hashPassword :: ByteString -> ByteString -> IO ByteString
+hashPassword pw salt = case Argon2.hash argon2Options pw salt keyLength of
   CryptoPassed key -> pure key
   CryptoFailed err -> fail $ show err
 

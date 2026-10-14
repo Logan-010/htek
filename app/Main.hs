@@ -8,6 +8,7 @@ import Control.Exception (bracket)
 import Control.Monad (unless, when)
 import Crypto.Random (getRandomBytes)
 import qualified Data.ByteString as BS
+import qualified Data.ByteString.Char8 as BSC
 import Data.Foldable (traverse_)
 import qualified Data.Text.Lazy as T
 import Data.Time.Clock (diffUTCTime)
@@ -93,9 +94,9 @@ main =
                         )
                         ( \output -> do
                             password <- case (Cli.password cli, Cli.key_file cli) of
-                              (Just pw, _) -> pure pw
-                              (Nothing, Just path) -> readFile path
-                              (Nothing, Nothing) -> Cipher.password (Cli.encrypt cli)
+                              (Just pw, _) -> pure $ BSC.pack pw
+                              (Nothing, Just path) -> BS.readFile path
+                              (Nothing, Nothing) -> BSC.pack <$> Cipher.password (Cli.encrypt cli)
                             len <- if Cli.quiet cli then pure Nothing else traverse (const $ hFileSize input) $ Cli.input cli
                             pb <- traverse ((\total -> newProgressBar style 10 $ Progress 0 total ()) . fromIntegral) len
                             salt <-
