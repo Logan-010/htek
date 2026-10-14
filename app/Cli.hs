@@ -19,6 +19,7 @@ cliHelp =
       "  -p, --password PASS    Password for encryption or decryption",
       "  -e, --encrypt          Encrypt the input file",
       "  -d, --decrypt          Decrypt the input file",
+      "  -q, --quiet            Don't print progress bar",
       "  -v, --version          Show version information",
       "  -h, --help             Show this help message",
       "",
@@ -40,6 +41,7 @@ data Cli = Cli
     password :: Maybe String,
     encrypt :: Bool,
     decrypt :: Bool,
+    quiet :: Bool,
     version :: Bool,
     help :: Bool
   }
@@ -71,6 +73,7 @@ parse' args pending cli = case pending of
       | h `elem` ["--password", "-p"] -> parse' t (Just Password) cli
       | h `elem` ["--encrypt", "-e"] -> parse' t Nothing $ cli {encrypt = True}
       | h `elem` ["--decrypt", "-d"] -> parse' t Nothing $ cli {decrypt = True}
+      | h `elem` ["--quiet", "-q"] -> parse' t Nothing $ cli {quiet = True}
       | h `elem` ["--version", "-v"] -> parse' t Nothing $ cli {version = True}
       | h `elem` ["--help", "-h"] -> parse' t Nothing $ cli {help = True}
       | otherwise -> case h of
@@ -80,7 +83,7 @@ parse' args pending cli = case pending of
           _ -> Left $ "unknown arg/flag " ++ h
 
 parse :: [String] -> Either String Cli
-parse args = case parse' args Nothing $ Cli Nothing Nothing False Nothing Nothing False False False False of
+parse args = case parse' args Nothing $ Cli Nothing Nothing False Nothing Nothing False False False False False of
   Left err -> Left err
   Right cli
     | help cli || version cli -> Right cli

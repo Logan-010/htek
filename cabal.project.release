@@ -1,0 +1,14 @@
+packages: .
+optimization: 2
+split-sections: True
+split-objs: False
+executable-stripping: True
+debug-info: False
+profiling: False
+library-profiling: False
+executable-profiling: False
+executable-dynamic: False
+jobs: $ncpus
+package *
+  ghc-options: -O2
+
