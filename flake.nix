@@ -29,8 +29,8 @@
               mkDerivation = args: hsuper.mkDerivation (args // { doCheck = false; });
               crypton = hself.callHackageDirect {
                 pkg = "crypton";
-                ver = "2.1.8";
-                sha256 = "sha256-AXgeI/nVn7mZDgL3Vag3ifIt3NGIHo4XKC4Dj919Oow=";
+                ver = "2.2.0";
+                sha256 = "sha256-LFI49aRKsgxf5B4qixL/BA1eafRXZ+I0zPXbsxRznkM=";
               } { };
               text = hself.callHackage "text" "2.1.4" { };
               ram = hself.callHackageDirect {
